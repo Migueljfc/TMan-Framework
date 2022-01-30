@@ -50,7 +50,7 @@ QueueHandle_t xQueue1;
  * Prototypes and tasks
  */
 
-//ainda est· em pseudo codigo
+//ainda est√° em pseudo codigo
 #define f(x,y) (1/(1+pow(x,2)))*y
 void vTaskFunction(void* pvParameters) {
     
@@ -83,7 +83,7 @@ void vTaskFunction(void* pvParameters) {
 }
 
 void vMonitor(void* pvParameters) {
-//    PrintStr("lanÁada");
+//    PrintStr("lan√ßada");
     char c;
     for (;;) {
         xQueuePeek(xQueue1, &c, 0);
@@ -145,6 +145,4 @@ int mainTMan( void )
 	the scheduler. */
 	return 0;
 }
-
-
 

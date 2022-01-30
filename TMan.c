@@ -36,7 +36,7 @@ struct _Task {
 };
 
 
-//recebe a handle para a task que servirá de Scheduler e a tickrate
+//recebe a handle para a task que servirÃ¡ de Scheduler e a tickrate
 void TMAN_Init(TaskHandle_t scheduler, int tick) {
     tasks = (Task*) pvPortMalloc(sizeof(Task)*16);           // support for 16 tasks
     if (tasks == NULL) exit(1);
@@ -101,7 +101,7 @@ void TMAN_TaskWaitPeriod(const signed char * name) {
     if(task == NULL) return;
     task->Task_status = 's';
     
-    //provavelmente deve ser preciso fazer aqui uma verificação qualquer antes de suspender
+    //provavelmente deve ser preciso fazer aqui uma verificaÃ§Ã£o qualquer antes de suspender
     
     vTaskSuspend(task->Task_handle);
 }
@@ -146,4 +146,12 @@ void TMAN_Scheduler(void* PvParameters) {
         tick++;
     }
     
+//    const TickType_t period = (*(int*) PvParameters) / portTICK_PERIOD_MS;
+//    
+//    for(;;) {
+//        
+//        //fazer o check das tasks que tÃªm de ser ativas
+//        
+//        vTaskDelay(period);
+//    }
 }
