@@ -12,12 +12,17 @@ typedef struct _Task Task;
 
 void TMAN_Init(TaskHandle_t scheduler, int tick ); 
 void TMAN_Close();
+
 Task* TMAN_Get_Task(const signed char* name);
+
 int TMAN_TaskAdd(const signed char * name);
-void TMAN_AddRegisterAttributes(const signed char * name, int period, int deadline);
+
+void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline);
+
 void TMAN_TaskWaitPeriod(const signed char * name);
-void TMAN_TaskRegisterAttributes( void );
+
 void TMAN_TaskStats(const signed char * name );
+
 void TMAN_Scheduler(void* PvParameters);
 
 

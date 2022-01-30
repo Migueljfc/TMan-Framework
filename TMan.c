@@ -16,17 +16,10 @@
 
 
 /* Global Variables */
+unsigned int tick = 0;
 int tickrate;
 int idx = 0;
 Task* tasks;
-
-
-//struct _TMan {
-//    Task* tasks; // = (Task*) pvPortMalloc(sizeof(Task)*16);      // support for 16 tasks max
-//    //int* tasks_ids = (int*) pvPortMalloc(sizeof(int*)*16);
-//    int index; // = 0
-//    int tickrate;   
-//};
 
 
 struct _Task {
@@ -34,7 +27,7 @@ struct _Task {
     int Task_id;
     int Task_period;
     int Task_deadline;
-
+    unsigned int Task_nextAct;
     
     TickType_t xLastExecutionTime;
     char Task_status;
@@ -86,7 +79,7 @@ int TMAN_TaskAdd(const signed char * name) {
     task.Task_handle = hdl;
     task.Task_name = pvPortMalloc(sizeof(char)*10);
     strcpy(task.Task_name, name);
-    task.Task_status = 'p';
+    task.Task_status = 's';
     task.Task_id = idx;
     
     tasks[idx++] = task;
@@ -94,11 +87,13 @@ int TMAN_TaskAdd(const signed char * name) {
     return 1;
 }
 
-void TMAN_AddRegisterAttributes(const signed char * name, int period, int deadline) {
+void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline) {
     Task* task = TMAN_Get_Task(name);
     task->Task_period = period;
-    task->Task_deadline = deadline;
+    task->Task_deadline = tick + task->Task_deadline;
+    task->Task_nextAct = tick + task->Task_period;
     
+    task->Task_status = 'p';
 }
 
 void TMAN_TaskWaitPeriod(const signed char * name) {
@@ -115,7 +110,6 @@ void TMAN_TaskStats(const signed char * name) {
     
 }
 
-
 void TMAN_Scheduler(void* PvParameters) {
     PrintStr("Scheduler Started");
     
@@ -125,42 +119,31 @@ void TMAN_Scheduler(void* PvParameters) {
      
     int maxPriorityIndex;
     for(;;) {
-        sprintf(msg,"VACA\n");
-        PrintStr(msg);
 //        maxPriorityIndex = 0;
-// 
-        for(int i = 0; i < idx; i++){
-            
-//            if(tasks[i].Task_status == 'p'){
-////                if (tasks[i]->Task_priority > maxPriorityIndex){
-////                    maxPriorityIndex = i;
-////                }
-//                vTaskResume(tasks[i].Task_handle);
-//                tasks[i].Task_status = 'r';
-//            }
-//            else{
-//                if(tasks[i]->Task_nextAct == xTaskGetTickCount() && tasks[i]->Task_status == 's'){
-//                    tasks[i]->Task_nextAct = xTaskGetTickCount() + tasks[i]->Task_period;
-//                    tasks[i]->Task_status = 'p'; 
+
+        
+        for(int i = 0; i < idx; i++){         
+            if(tasks[i].Task_nextAct == tick /*&& tasks[i].Task_status == 's'*/){
+                tasks[i].Task_nextAct = tick + tasks[i].Task_period;
+                tasks[i].Task_status = 'p'; 
 //                    if (tasks[i]->Task_priority > maxPriorityIndex){
 //                        maxPriorityIndex = i;
 //                    }
+            }
+            if(tasks[i].Task_status == 'p'){
+//                if (tasks[i]->Task_priority > maxPriorityIndex){
+//                    maxPriorityIndex = i;
 //                }
-//            }
-            
-            
+                
+                vTaskResume(tasks[i].Task_handle);
+                tasks[i].Task_status = 'r';
+            }
         }
 ////        tasks[maxPriorityIndex]->Task_status = 'r';
-//        
+//      
+        
         vTaskDelay(period);
+        tick++;
     }
     
-//    const TickType_t period = (*(int*) PvParameters) / portTICK_PERIOD_MS;
-//    
-//    for(;;) {
-//        
-//        //fazer o check das tasks que têm de ser ativas
-//        
-//        vTaskDelay(period);
-//    }
 }

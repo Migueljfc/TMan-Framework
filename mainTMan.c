@@ -56,17 +56,17 @@ void vTaskFunction(void* pvParameters) {
     
     int i_limit = 100000, j_limit = 5000;
     const signed char* name = (char*) pvParameters;
+
     
     uint8_t msg[80];
     TickType_t xLastExecutionTime;    
     
 
     while (1) {
-        PrintStr("boi\n\r");
         TMAN_TaskWaitPeriod(name);
 //        xLastExecutionTime = xTaskGetTickCount();
         
-        sprintf(msg,"%s, %d\n\r", name, xTaskGetTickCount()); //tem de ser com a cena da UART
+        sprintf(msg,"\n\r%s, %d\n\r", name, (int) xTaskGetTickCount()); //tem de ser com a cena da UART
         PrintStr(msg);
         
         for(int i = 0; i < i_limit; i++) {
@@ -76,10 +76,9 @@ void vTaskFunction(void* pvParameters) {
 //            }
         }
         
-        sprintf(msg,"%d", (int) xTaskGetTickCount() - xLastExecutionTime);
-        PrintStr(msg);
+//        sprintf(msg,"%d", (int) xTaskGetTickCount() - xLastExecutionTime);
+//        PrintStr(msg);
         //other stuff if needed
-//        vTaskDelay((const TickType_t) 1000);
     }
 }
 
@@ -120,21 +119,23 @@ int mainTMan( void )
     xQueue1 = xQueueCreate(50,sizeof(char));    
     
   
+    //monitor task for faster prints
 //    xTaskCreate( vMonitor, ( const signed char * const ) "Monitor", configMINIMAL_STACK_SIZE, NULL, A_PRIO, NULL );
 //    xQueueSend(xQueue1, "ola" , (TickType_t) 0);
 
     
     //Create scheduler task and start TMan
     xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, A_PRIO-1, &sch);
-    TMAN_Init(sch, 1000);
+    TMAN_Init(sch, 100);
    
     xTaskCreate( vTaskFunction, ( const signed char * const ) "A", configMINIMAL_STACK_SIZE, (void*) "A" , A_PRIO, NULL);
     TMAN_TaskAdd("A");
+    TMAN_TaskRegisterAttributes("A", 10, 10);
+      
+    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
+    TMAN_TaskAdd("B");
+    TMAN_TaskRegisterAttributes("B",15,15);
     
-
-  
-//    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
-//    TMAN_TaskAdd("B");
     
     /* Finally start the scheduler. */
 	vTaskStartScheduler();
