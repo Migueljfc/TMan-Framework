@@ -37,8 +37,8 @@
 #include "TMan.h"
 
 /* Priorities of the demo application tasks (high numb. -> high prio.) */
-#define SCH_PRIO  	(tskIDLE_PRIORITY + 1)
-#define A_PRIO  	(tskIDLE_PRIORITY + 4)
+#define SCH_PRIO  	(tskIDLE_PRIORITY)
+#define A_PRIO  	(tskIDLE_PRIORITY + 1)
 #define B_PRIO	    (tskIDLE_PRIORITY + 2)
 #define C_PRIO	    (tskIDLE_PRIORITY + 3)
 
@@ -78,6 +78,7 @@ void vTaskFunction(void* pvParameters) {
         
         sprintf(msg,"%d", (int) xTaskGetTickCount() - xLastExecutionTime);
         PrintStr(msg);
+        //TMAN_TaskStats(name);
         //other stuff if needed
     }
 }
@@ -122,20 +123,18 @@ int mainTMan( void )
     //monitor task for faster prints
 //    xTaskCreate( vMonitor, ( const signed char * const ) "Monitor", configMINIMAL_STACK_SIZE, NULL, A_PRIO, NULL );
 //    xQueueSend(xQueue1, "ola" , (TickType_t) 0);
-    
 
     
     //Create scheduler task and start TMan
-    xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, SCH_PRIO, &sch);
+    xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, A_PRIO-1, &sch);
     TMAN_Init(sch, 100);
    
-    xTaskCreate( vTaskFunction, ( const signed char * const ) "A", configMINIMAL_STACK_SIZE, (void*) "A" , A_PRIO, NULL);
+    xTaskCreate( vTaskFunction, ( const signed char * const ) "A", configMINIMAL_STACK_SIZE, (void*) "A" , B_PRIO, NULL);
     TMAN_TaskAdd("A");
-    TMAN_TaskRegisterAttributes("A", 15, 15, 20);
-      
-    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
+    TMAN_TaskRegisterAttributes("A", 10, 5, 50,"0"); //name, int period, int deadline, int phase, const signed char * precedent)
+    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO + 1, NULL );
     TMAN_TaskAdd("B");
-    TMAN_TaskRegisterAttributes("B",15,15, 0);
+    TMAN_TaskRegisterAttributes("B",10,20, 0,"A");
     
 //    xTaskCreate( vTaskFunction, ( const signed char * const ) "C", configMINIMAL_STACK_SIZE, (void*) "C", C_PRIO, NULL );
 //    TMAN_TaskAdd("C");
@@ -167,6 +166,5 @@ int mainTMan( void )
 	the scheduler. */
 	return 0;
 }
-
 
 
