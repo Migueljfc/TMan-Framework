@@ -29,7 +29,9 @@ struct _Task {
     int Task_deadline;
     unsigned int Task_nextAct;
     int Task_phase;
-    int Task_nact;
+
+    int Task_nact; 
+    int Task_nmiss;
     
     TickType_t xLastExecutionTime;
     char Task_status;
@@ -86,6 +88,7 @@ int TMAN_TaskAdd(const signed char * name) {
     task.Task_status = 's';
     task.Task_id = idx;
     task.Task_nact = 0;
+    task.Task_nmiss = 0;
     
     tasks[idx++] = task;
     
@@ -96,7 +99,7 @@ void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadl
     Task* task = TMAN_Get_Task(name);
     task->Task_period = period;
     task->Task_deadline = tick + task->Task_deadline;
-    task->Task_nextAct = tick;
+    task->Task_nextAct = tick + phase;
     task->Task_phase = phase;
     
     task->Task_status = 'p';
@@ -108,6 +111,11 @@ void TMAN_TaskWaitPeriod(const signed char * name) {
     
     task->Task_status = 's';
    
+    if (tick > task->Task_deadline) {
+        PrintStr("Deadline miss!");
+        task->Task_nmiss++;
+    }
+    
     vTaskSuspend(task->Task_handle);
 }
 
@@ -121,18 +129,20 @@ void TMAN_Scheduler(void* PvParameters) {
     const TickType_t period =  tickrate * portTICK_PERIOD_MS;
     
     uint8_t msg[40];    
-     
-    int maxPriorityIndex;
+    
     for(;;) {
         for(int i = 0; i < idx; i++){
             if(tasks[i].Task_status == 'r') continue;
-           
+            
             if(tasks[i].Task_nextAct == tick && tasks[i].Task_status == 's'){
                 tasks[i].Task_nextAct = tasks[i].Task_nextAct + tasks[i].Task_period + tasks[i].Task_phase;
+                tasks[i].Task_deadline = tick + tasks[i].Task_deadline;
                 
                 tasks[i].Task_status = 'p'; 
             }
             if(tasks[i].Task_status == 'p'){
+                
+                
                 tasks[i].Task_status = 'r';
                 tasks[i].Task_nact++;
                 vTaskResume(tasks[i].Task_handle);

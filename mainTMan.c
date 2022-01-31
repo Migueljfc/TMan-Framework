@@ -37,8 +37,8 @@
 #include "TMan.h"
 
 /* Priorities of the demo application tasks (high numb. -> high prio.) */
-#define SCH_PRIO  	(tskIDLE_PRIORITY)
-#define A_PRIO  	(tskIDLE_PRIORITY + 1)
+#define SCH_PRIO  	(tskIDLE_PRIORITY + 1)
+#define A_PRIO  	(tskIDLE_PRIORITY + 4)
 #define B_PRIO	    (tskIDLE_PRIORITY + 2)
 #define C_PRIO	    (tskIDLE_PRIORITY + 3)
 
@@ -122,19 +122,20 @@ int mainTMan( void )
     //monitor task for faster prints
 //    xTaskCreate( vMonitor, ( const signed char * const ) "Monitor", configMINIMAL_STACK_SIZE, NULL, A_PRIO, NULL );
 //    xQueueSend(xQueue1, "ola" , (TickType_t) 0);
+    
 
     
     //Create scheduler task and start TMan
-    xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, A_PRIO-1, &sch);
-    TMAN_Init(sch, 500);
+    xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, SCH_PRIO, &sch);
+    TMAN_Init(sch, 100);
    
     xTaskCreate( vTaskFunction, ( const signed char * const ) "A", configMINIMAL_STACK_SIZE, (void*) "A" , A_PRIO, NULL);
     TMAN_TaskAdd("A");
-    TMAN_TaskRegisterAttributes("A", 10, 10, 5);
+    TMAN_TaskRegisterAttributes("A", 15, 15, 20);
       
-//    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
-//    TMAN_TaskAdd("B");
-//    TMAN_TaskRegisterAttributes("B",15,15, 10);
+    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
+    TMAN_TaskAdd("B");
+    TMAN_TaskRegisterAttributes("B",15,15, 0);
     
 //    xTaskCreate( vTaskFunction, ( const signed char * const ) "C", configMINIMAL_STACK_SIZE, (void*) "C", C_PRIO, NULL );
 //    TMAN_TaskAdd("C");
