@@ -28,6 +28,8 @@ struct _Task {
     int Task_period;
     int Task_deadline;
     unsigned int Task_nextAct;
+    int Task_phase;
+    int Task_nact;
     
     TickType_t xLastExecutionTime;
     char Task_status;
@@ -36,7 +38,7 @@ struct _Task {
 };
 
 
-//recebe a handle para a task que servirá de Scheduler e a tickrate
+//recebe a handle para a task que servir� de Scheduler e a tickrate
 void TMAN_Init(TaskHandle_t scheduler, int tick) {
     tasks = (Task*) pvPortMalloc(sizeof(Task)*16);           // support for 16 tasks
     if (tasks == NULL) exit(1);
@@ -74,24 +76,28 @@ int TMAN_TaskAdd(const signed char * name) {
     Task task;
     TaskHandle_t hdl = xTaskGetHandle(name);
     
-    PrintStr("task received");
+    uint8_t msg[40];
+    sprintf(msg,"Task %s received\n\r", name);
+    PrintStr(msg);
     
     task.Task_handle = hdl;
     task.Task_name = pvPortMalloc(sizeof(char)*10);
     strcpy(task.Task_name, name);
     task.Task_status = 's';
     task.Task_id = idx;
+    task.Task_nact = 0;
     
     tasks[idx++] = task;
     
     return 1;
 }
 
-void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline) {
+void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline, int phase) {
     Task* task = TMAN_Get_Task(name);
     task->Task_period = period;
     task->Task_deadline = tick + task->Task_deadline;
-    task->Task_nextAct = tick + task->Task_period;
+    task->Task_nextAct = tick;
+    task->Task_phase = phase;
     
     task->Task_status = 'p';
 }
@@ -99,10 +105,9 @@ void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadl
 void TMAN_TaskWaitPeriod(const signed char * name) {
     Task* task = TMAN_Get_Task(name);
     if(task == NULL) return;
+    
     task->Task_status = 's';
-    
-    //provavelmente deve ser preciso fazer aqui uma verificação qualquer antes de suspender
-    
+   
     vTaskSuspend(task->Task_handle);
 }
 
@@ -111,7 +116,7 @@ void TMAN_TaskStats(const signed char * name) {
 }
 
 void TMAN_Scheduler(void* PvParameters) {
-    PrintStr("Scheduler Started");
+    PrintStr("Scheduler Started\r\n");
     
     const TickType_t period =  tickrate * portTICK_PERIOD_MS;
     
@@ -119,39 +124,22 @@ void TMAN_Scheduler(void* PvParameters) {
      
     int maxPriorityIndex;
     for(;;) {
-//        maxPriorityIndex = 0;
-
-        
-        for(int i = 0; i < idx; i++){         
-            if(tasks[i].Task_nextAct == tick /*&& tasks[i].Task_status == 's'*/){
-                tasks[i].Task_nextAct = tick + tasks[i].Task_period;
+        for(int i = 0; i < idx; i++){
+            if(tasks[i].Task_status == 'r') continue;
+           
+            if(tasks[i].Task_nextAct == tick && tasks[i].Task_status == 's'){
+                tasks[i].Task_nextAct = tasks[i].Task_nextAct + tasks[i].Task_period + tasks[i].Task_phase;
+                
                 tasks[i].Task_status = 'p'; 
-//                    if (tasks[i]->Task_priority > maxPriorityIndex){
-//                        maxPriorityIndex = i;
-//                    }
             }
             if(tasks[i].Task_status == 'p'){
-//                if (tasks[i]->Task_priority > maxPriorityIndex){
-//                    maxPriorityIndex = i;
-//                }
-                
-                vTaskResume(tasks[i].Task_handle);
                 tasks[i].Task_status = 'r';
+                tasks[i].Task_nact++;
+                vTaskResume(tasks[i].Task_handle);
             }
         }
-////        tasks[maxPriorityIndex]->Task_status = 'r';
-//      
         
         vTaskDelay(period);
         tick++;
     }
-    
-//    const TickType_t period = (*(int*) PvParameters) / portTICK_PERIOD_MS;
-//    
-//    for(;;) {
-//        
-//        //fazer o check das tasks que têm de ser ativas
-//        
-//        vTaskDelay(period);
-//    }
 }

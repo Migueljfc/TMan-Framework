@@ -50,11 +50,11 @@ QueueHandle_t xQueue1;
  * Prototypes and tasks
  */
 
-//ainda est√° em pseudo codigo
+//ainda est· em pseudo codigo
 #define f(x,y) (1/(1+pow(x,2)))*y
 void vTaskFunction(void* pvParameters) {
     
-    int i_limit = 100000, j_limit = 5000;
+    int i_limit = 5, j_limit = 18;       // 100, 516
     const signed char* name = (char*) pvParameters;
 
     
@@ -64,26 +64,26 @@ void vTaskFunction(void* pvParameters) {
 
     while (1) {
         TMAN_TaskWaitPeriod(name);
-//        xLastExecutionTime = xTaskGetTickCount();
+        xLastExecutionTime = xTaskGetTickCount();
         
         sprintf(msg,"\n\r%s, %d\n\r", name, (int) xTaskGetTickCount()); //tem de ser com a cena da UART
         PrintStr(msg);
         
         for(int i = 0; i < i_limit; i++) {
-//            for (int j = 0; j < j_limit; j++) {
-//                f(i,j);
-//                //computation to consume time
-//            }
+            for (int j = 0; j < j_limit; j++) {
+                f(i,j);
+                //computation to consume time
+            }
         }
         
-//        sprintf(msg,"%d", (int) xTaskGetTickCount() - xLastExecutionTime);
-//        PrintStr(msg);
+        sprintf(msg,"%d", (int) xTaskGetTickCount() - xLastExecutionTime);
+        PrintStr(msg);
         //other stuff if needed
     }
 }
 
 void vMonitor(void* pvParameters) {
-//    PrintStr("lan√ßada");
+//    PrintStr("lanÁada");
     char c;
     for (;;) {
         xQueuePeek(xQueue1, &c, 0);
@@ -126,16 +126,37 @@ int mainTMan( void )
     
     //Create scheduler task and start TMan
     xTaskCreate( TMAN_Scheduler, ( const signed char * const ) "Scheduler", configMINIMAL_STACK_SIZE, NULL, A_PRIO-1, &sch);
-    TMAN_Init(sch, 100);
+    TMAN_Init(sch, 500);
    
     xTaskCreate( vTaskFunction, ( const signed char * const ) "A", configMINIMAL_STACK_SIZE, (void*) "A" , A_PRIO, NULL);
     TMAN_TaskAdd("A");
-    TMAN_TaskRegisterAttributes("A", 10, 10);
+    TMAN_TaskRegisterAttributes("A", 10, 10, 5);
       
-    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
-    TMAN_TaskAdd("B");
-    TMAN_TaskRegisterAttributes("B",15,15);
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "B", configMINIMAL_STACK_SIZE, (void*) "B", B_PRIO, NULL );
+//    TMAN_TaskAdd("B");
+//    TMAN_TaskRegisterAttributes("B",15,15, 10);
     
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "C", configMINIMAL_STACK_SIZE, (void*) "C", C_PRIO, NULL );
+//    TMAN_TaskAdd("C");
+//    TMAN_TaskRegisterAttributes("C",30,30);
+// 
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "D", configMINIMAL_STACK_SIZE, (void*) "D", C_PRIO, NULL );
+//    TMAN_TaskAdd("D");
+//    TMAN_TaskRegisterAttributes("D",100,100);
+//    
+//    
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "E", configMINIMAL_STACK_SIZE, (void*) "E", C_PRIO, NULL );
+//    TMAN_TaskAdd("E");
+//    TMAN_TaskRegisterAttributes("E",35,35);
+//    
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "F", configMINIMAL_STACK_SIZE, (void*) "F", C_PRIO, NULL );
+//    TMAN_TaskAdd("F");
+//    TMAN_TaskRegisterAttributes("F",11,11);
+//    
+//    
+//    xTaskCreate( vTaskFunction, ( const signed char * const ) "G", configMINIMAL_STACK_SIZE, (void*) "G", C_PRIO, NULL );
+//    TMAN_TaskAdd("G");
+//    TMAN_TaskRegisterAttributes("G",10,10);
     
     /* Finally start the scheduler. */
 	vTaskStartScheduler();
@@ -145,4 +166,6 @@ int mainTMan( void )
 	the scheduler. */
 	return 0;
 }
+
+
 

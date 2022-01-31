@@ -17,7 +17,7 @@ Task* TMAN_Get_Task(const signed char* name);
 
 int TMAN_TaskAdd(const signed char * name);
 
-void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline);
+void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline, int phase);
 
 void TMAN_TaskWaitPeriod(const signed char * name);
 
