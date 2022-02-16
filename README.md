@@ -1,4 +1,4 @@
-<p align = "left"> SOTR Project 2022 </p>
+<p align = "left"> SOTR Final Project 2022 </p>
 The objective of the work is developing a framework (Task Manager – TMan) that allows registering a
 set of FreeRTOS tasks, associate each task with a set of attributes (e.g. period, deadline, phase,
 precedence constraints) and activate those tasks at the appropriate instants.
