@@ -21,21 +21,19 @@ int tickrate;
 int idx = 0;
 Task* tasks;
 
-
 struct _Task {
     char* Task_name;
     int Task_id;
     int Task_period;
     int Task_deadline;
     unsigned int Task_nextAct;
-    TickType_t xLastExecutionTime;
     char Task_status;
-    int Task_precedIdx;
-    char * Task_preced;
     TaskHandle_t Task_handle;
     int Task_phase;
     int Task_nact;
     int Task_nmiss;
+    char * Task_preced;
+    int Task_precedIdx;
     int Task_blkRes;          //1- block resources 0 - free resources
 };
 
@@ -53,6 +51,7 @@ void TMAN_Close() {
     tasks = NULL;
     idx = 0;
     tickrate = 0;
+    vTaskEndScheduler();
 }
 
 Task* TMAN_Get_Task(const signed char* name){   
@@ -97,7 +96,12 @@ int TMAN_TaskAdd(const signed char * name) {
 void TMAN_TaskRegisterAttributes(const signed char * name, int period, int deadline, int phase, const signed char * precedent) {
     Task* task = TMAN_Get_Task(name);
     task->Task_period = period;
-    task->Task_deadline = tick + deadline;
+    if(deadline == 0){
+        task->Task_deadline = period;
+    }
+    else{
+        task->Task_deadline = tick + deadline;
+    }
     task->Task_nextAct = tick + phase;
     task->Task_phase = phase;
     task->Task_blkRes = 1;
@@ -123,16 +127,17 @@ void TMAN_TaskWaitPeriod(const signed char * name) {
         PrintStr("Deadline miss!");
         task->Task_nmiss++;
     }
-    //task->Task_blkRes = 0;
+    
     task->Task_status = 's';
+    task->Task_blkRes = 0;
    
     vTaskSuspend(task->Task_handle);
 }
 
-void TMAN_TaskStats(const signed char * name) {
-    uint8_t msg[40];
-    int index = tasks[TMAN_Get_Index(name)].Task_precedIdx;
-    sprintf(msg,"%s nAct = %d \n\r", name, tasks[index].Task_nact);
+void TMAN_TaskStats(const signed char * name) { 
+    uint8_t msg[80]; 
+    int index = TMAN_Get_Index(name);
+    sprintf(msg,"Name: %s nAct = %d nMiss = %d \n\r", name, tasks[index].Task_nact,tasks[index].Task_nmiss);
     PrintStr(msg);
 }
 
@@ -149,43 +154,47 @@ void TMAN_Scheduler(void* PvParameters) {
             
             if(tasks[i].Task_status == 'r') {
                 tasks[i].Task_blkRes = 1;
+                if(tick > tasks[i].Task_deadline){
+                    PrintStr("Deadline Miss\n\r");
+                    tasks[i].Task_nmiss++;
+                    break;
+                    
+                }
             }
             else{
                 if(tasks[i].Task_status == 's'){
                     tasks[i].Task_deadline = tick + tasks[i].Task_deadline;
-                   //tasks[i].Task_blkRes = 0;
                 }
                 if(tasks[i].Task_nextAct == tick && tasks[i].Task_status == 's'){
                     tasks[i].Task_nextAct = tasks[i].Task_nextAct + tasks[i].Task_period + tasks[i].Task_phase;
                     tasks[i].Task_deadline = tick + tasks[i].Task_deadline;
-                    if(tasks[i].Task_deadline - tick < 0){
-                        PrintStr("Deadline Miss2\n\r");
+                    if(tick > tasks[i].Task_deadline){
+                        PrintStr("Deadline Miss\n\r");
                         tasks[i].Task_nmiss++;
-                        continue;
+                        break;
                     }
                     tasks[i].Task_status = 'p'; 
                 }
-                else{
-                    if(tasks[i].Task_precedIdx != 99){
-                        blocked = tasks[i].Task_precedIdx;
-                        blocked = tasks[blocked].Task_blkRes;
-                        sprintf(msg,"%s - %d \n\r", tasks[i].Task_name, blocked);
-                        PrintStr(msg);
+                if(tasks[i].Task_precedIdx != 99){
+                    blocked = tasks[i].Task_precedIdx;
+                    blocked = tasks[blocked].Task_blkRes;
+//                    sprintf(msg,"%s - %d \n\r", tasks[i].Task_name, blocked);
+//                    PrintStr(msg);
 
-                    }
-                    else{
-                        blocked = 0;
-                    }
-                    
-                    if(tasks[i].Task_status == 'p' && blocked == 0){ //&& tasks[tasks[i].Task_precedIdx].Task_blkRes == 0) {                
-                        tasks[i].Task_status = 'r';
-                        tasks[i].Task_nact++;
-                        tasks[i].Task_blkRes = 0;
-                        vTaskResume(tasks[i].Task_handle);
-                    }
-                    //if(tasks[i].Task_status == 'p') tasks[i].Task_blkRes = 1;
                 }
+                else{
+                    blocked = 0;
+                }
+
+                if(tasks[i].Task_status == 'p' && blocked == 0){ //&& tasks[tasks[i].Task_precedIdx].Task_blkRes == 0) {                
+                    tasks[i].Task_status = 'r';
+                    tasks[i].Task_nact++;
+                    tasks[i].Task_blkRes = 1;
+                    vTaskResume(tasks[i].Task_handle);
+                }
+                //if(tasks[i].Task_status == 'p') tasks[i].Task_blkRes = 1;
             }
+
                 
             
 //            else{
